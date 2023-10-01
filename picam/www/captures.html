@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>PiCam</title>
+    <link rel="icon" href="/logo.png" type="image/png">
+    <link rel="shortcut icon" href="/logo.png" type="image/png">
+    <link rel="stylesheet" href="style.css">
+    <script src="utils.js"></script>
+    <style>
+        main {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        section {
+            margin-top: 1rem;
+        }
+
+        article {
+            margin: .5rem;
+            width: 100px;
+            height: 50px;
+            text-align: center;
+            border: 1px solid darkgray;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            position: relative;
+        }
+
+        article.active {
+            background-color: whitesmoke;
+            color: black;
+        }
+
+        article button {
+            position: absolute;
+            right: -8px;
+            top: -8px;
+            background: darkred;
+            border: none;
+            border-radius: 30%;
+            font-size: small;
+        }
+
+        video {
+            max-width: 100vw;
+            max-height: calc(100vh - 5rem);
+            margin: 0 auto;
+            border: 5px solid #fff2;
+        }
+
+        video:not([src]) {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <nav>
+        <a href="/"><img src="logo.png" /></a>
+        <a href="/">📺 LIVE</a>
+        <a href="/captures" class="active">📸 CAPTURES</a>
+        <a href="/system">🔧 SYSTEM</a>
+    </nav>
+    <main>
+        <div class="loading">
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
+    </main>
+
+    <script>
+        fetch('/captures.json?nocache=' + Date.now()).then(res => {
+            if (res.ok) {
+                res.json().then(data => {
+                    const main = document.querySelector('main')
+                    main.innerHTML = '<video controls autoplay></video>'
+                    let lastSection = undefined
+                    data.forEach(capture => {
+                        const ts = new Date(parseInt(capture.replace(/\.mp4$/, '')) * 1000)
+                        const date = ts.toLocaleString(undefined, {
+                            year: '2-digit',
+                            month: '2-digit',
+                            day: '2-digit',
+                        })
+                        const time = ts.toLocaleString(undefined, {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })
+                        if (!lastSection || lastSection.querySelector('header').innerText !== date) {
+                            const section = document.createElement('section')
+                            const header = document.createElement('header')
+                            header.innerText = date
+                            section.appendChild(header)
+                            main.appendChild(section)
+                            lastSection = section
+                        }
+                        const art = document.createElement('article')
+                        art.innerText = time
+                        const btn = document.createElement('button')
+                        btn.innerHTML = '&times;'
+                        btn.onclick = (e) => {
+                            e.stopPropagation()
+                            fetch('/captures/' + capture, { method: 'delete' })
+                                .then(() => {
+                                    if (art.classList.contains('active')) {
+                                        document.querySelector('video').removeAttribute('src')
+                                    }
+                                    art.remove()
+                                })
+                                .catch(e => alert(e))
+                        }
+                        art.appendChild(btn)
+                        art.onclick = () => {
+                            document.querySelectorAll('article').forEach(a => a.classList.remove('active'))
+                            art.classList.add('active')
+                            const video = document.querySelector('video')
+                            video.src = '/captures/' + capture
+                            video.onload = () => video.scrollIntoView({ behavior: 'smooth' })
+                        }
+                        lastSection.appendChild(art)
+                    })
+                })
+            } else {
+                console.error(res)
+            }
+        })
+    </script>
+</body>
+
+</html>

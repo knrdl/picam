@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>PiCam</title>
+    <link rel="icon" href="/logo.png" type="image/png">
+    <link rel="shortcut icon" href="/logo.png" type="image/png">
+    <link rel="stylesheet" href="style.css">
+    <script src="utils.js"></script>
+    <style>
+        table {
+            margin-top: 5rem;
+            margin-bottom: 5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <nav>
+        <a href="/"><img src="logo.png" /></a>
+        <a href="/">📺 LIVE</a>
+        <a href="/captures">📸 CAPTURES</a>
+        <a href="/system" class="active">🔧 SYSTEM</a>
+    </nav>
+    <main>
+        <div style="display: flex; justify-content: center; align-items: center;">
+            <table>
+                <tr>
+                    <th>Uptime</th>
+                    <td id="uptimeV" colspan="2"></td>
+                </tr>
+                <tr>
+                    <th>System Temperature</th>
+                    <td id="sysTempV"></td>
+                    <td><meter id="sysTempM" min="0" max="100" low="30" high="85" optimum="50" value="0"></meter></td>
+                </tr>
+                <tr>
+                    <th>Disk Usage</th>
+                    <td id="diskUsageV"></td>
+                    <td><meter id="diskUsageM" min="0" max="100" low="5" high="80" value="0"></meter></td>
+                </tr>
+                <tr>
+                    <th>Load (1min)</th>
+                    <td id="load1V"></td>
+                    <td><meter id="load1M" min="0" max="100" high="90" optimum="50" value="0"></meter></td>
+                </tr>
+                <tr>
+                    <th>Load (5min)</th>
+                    <td id="load5V"></td>
+                    <td><meter id="load5M" min="0" max="100" high="90" optimum="50" value="0"></meter></td>
+                </tr>
+                <tr>
+                    <th>Load (15min)</th>
+                    <td id="load15V"></td>
+                    <td><meter id="load15M" min="0" max="100" high="90" optimum="50" value="0"></meter></td>
+                </tr>
+            </table>
+        </div>
+
+        <div style="display: flex; justify-content: center; align-items: center; gap: 10px" id="actionButtons" hidden>
+            <form action="/system/shutdown" method="post">
+                <button type="submit" class="danger" style="height: 3rem;">⏻ Shutdown</button>
+            </form>
+            <form action="/system/reboot" method="post">
+                <button type="submit" class="danger" style="height: 3rem;">↻ Reboot</button>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        function fmtUptime(value, precision) {
+            const divmod = (x, y) => [Math.floor(x / y), x % y]
+            let days = 0, hours = 0, mins = 0, secs = value;
+            [mins, secs] = divmod(secs, 60);
+            [hours, mins] = divmod(mins, 60);
+            [days, hours] = divmod(hours, 24)
+            const fmtToken = (value, unit) => ((value > 0 ? value + unit + ' ' : ''))
+            return fmtToken(days, 'd') + fmtToken(hours, 'h') + fmtToken(mins, 'm')
+        }
+
+        setInterval(() => {
+            fetch('/metrics.json?nocache=' + Date.now()).then(res => {
+                if (res.ok) {
+                    res.json().then(data => {
+                        id('uptimeV').innerText = fmtUptime(data.uptime)
+                        id('diskUsageM').value = data.disk_usage
+                        id('diskUsageV').innerText = data.disk_usage + '%'
+                        id('sysTempM').value = data.system_temperature
+                        id('sysTempV').innerText = data.system_temperature + '°C'
+                        id('load1M').value = data.load_percent[0]
+                        id('load1V').innerText = data.load_percent[0] + '%'
+                        id('load5M').value = data.load_percent[1]
+                        id('load5V').innerText = data.load_percent[1] + '%'
+                        id('load15M').value = data.load_percent[2]
+                        id('load15V').innerText = data.load_percent[2] + '%'
+                        show('#actionButtons', data.has_root_capabilities)
+                    })
+                } else {
+                    console.error(res)
+                }
+            })
+        }, 1000)
+    </script>
+</body>
+
+</html>
