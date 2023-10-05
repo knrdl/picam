@@ -22,6 +22,7 @@ extension_mimetype_map = {
     '.js':	'application/x-javascript',
     None: 'application/octet-stream',
 }
+
 basic_auth_header_value = None
 if config.webserver.auth.username and config.webserver.auth.password:
     v = (config.webserver.auth.username + ':' + config.webserver.auth.password).encode('ascii')
@@ -64,29 +65,57 @@ def start_webserver(cam: Cam):
 
             if not self.check_basic_auth():
                 return
-            
+
             url = urlparse(self.path)
 
+            if url.path == '/bell' and config.telegram_doorbell.enable and not cam.is_turned_off():
+                import telegram
+                telegram.send_photos(cam)
+                return self.send_text('ok', 200)
+
             if url.path == '/captures.json':
-                data = sorted([os.path.basename(f) for f in glob.glob(os.path.join(config.captures.directory, '*.mp4'))], reverse=True)
+                entries = glob.glob(os.path.join(config.captures.directory, '*.mp4'))
+                data = sorted([os.path.basename(f) for f in entries], reverse=True, key=lambda x: ('-' not in x, x))
                 return self.send_json(data)
 
-            if url.path.startswith('/captures/') and re.fullmatch(r'/captures/\d+\.mp4', url.path):
+            if url.path.startswith('/captures/') and re.fullmatch(r'/captures/[\d\-]+\.mp4', url.path):
                 filename = os.path.basename(url.path)
                 diskpath = os.path.join(config.captures.directory, filename)
                 if os.path.isfile(diskpath):
                     with open(diskpath, 'rb') as f:
                         fs = os.fstat(f.fileno())
-                        self.send_response(200)
-                        self.send_header('Content-Type', 'video/mp4')
-                        self.send_header('Content-Length', str(fs.st_size))
-                        self.send_header('Last-Modified', self.date_time_string(fs.st_mtime))
-                        self.end_headers()
-                        while True:
-                            buf = f.read(512*1024)
-                            if not buf:
-                                break
-                            self.wfile.write(buf)
+                        if self.headers.get('Range'):
+                            m = re.fullmatch(r'bytes=(\d+)-(\d+)?$', self.headers.get('Range'))
+                            start, stop = int(m.group(1)), int(m.group(2)) if m.group(2) else fs.st_size
+                            chunk_size = min(2*1024*1024, stop - start)
+
+                            self.send_response(206)
+                            self.send_header('Content-Type', 'video/mp4')
+                            self.send_header('Content-Length', chunk_size)
+                            self.send_header('Last-Modified', self.date_time_string(fs.st_mtime))
+                            self.send_header('Accept-Ranges', 'bytes')
+                            self.send_header('Content-Range', f'bytes {start}-{start+chunk_size}/{fs.st_size}')
+                            self.end_headers()
+
+                            f.seek(start)
+                            buffer_size = 512*1024
+                            while chunk_size > 0:
+                                buf = f.read(buffer_size)
+                                if not buf:
+                                    break
+                                self.wfile.write(buf)
+                                chunk_size -= buffer_size
+                        else:
+                            self.send_response(200)
+                            self.send_header('Content-Type', 'video/mp4')
+                            self.send_header('Content-Length', str(fs.st_size))
+                            self.send_header('Last-Modified', self.date_time_string(fs.st_mtime))
+                            self.end_headers()
+                            while True:
+                                buf = f.read(512*1024)
+                                if not buf:
+                                    break
+                                self.wfile.write(buf)
                 else:
                     return self.send_text('not found', 404)
                 return
@@ -95,6 +124,7 @@ def start_webserver(cam: Cam):
                 data = {
                     'uptime': system.uptime_seconds(),
                     'system_temperature': system.temperature_celsius(),
+                    'w1_temperature': system.w1_temperature_celsius(),
                     'disk_usage': system.disk_usage_percent(),
                     'load_percent': system.load_percent(),
                     'has_root_capabilities': system.has_root_capabilities()
@@ -166,7 +196,7 @@ def start_webserver(cam: Cam):
         def do_POST(self):
             if not self.check_basic_auth():
                 return
-            
+
             url = urlparse(self.path)
 
             if url.path == '/camera/mode/day':
@@ -200,10 +230,10 @@ def start_webserver(cam: Cam):
         def do_DELETE(self):
             if not self.check_basic_auth():
                 return
-            
+
             url = urlparse(self.path)
 
-            if re.fullmatch(r'/captures/\d+\.mp4', url.path):
+            if re.fullmatch(r'/captures/[\d\-]+\.mp4', url.path):
                 filename = os.path.basename(url.path)
                 diskpath = os.path.join(config.captures.directory, filename)
                 if os.path.isfile(diskpath):

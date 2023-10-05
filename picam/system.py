@@ -2,6 +2,7 @@ import os
 import shutil
 from datetime import datetime
 import subprocess
+from glob import glob
 
 import astral
 import pytz
@@ -9,6 +10,11 @@ import pytz
 
 import config
 
+def w1_temperature_celsius() -> int:
+    path = next(iter(sorted(glob('/sys/bus/w1/devices/*/temperature'))), None)
+    if path and os.path.isfile(path):
+        with open(path) as f:
+            return round(int(f.readline()) / 1000)
 
 def temperature_celsius() -> int:
     path = '/sys/class/thermal/thermal_zone0/temp'

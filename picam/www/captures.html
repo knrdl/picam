@@ -31,6 +31,10 @@
             position: relative;
         }
 
+        article.big {
+            height: 100px;
+        }
+
         article.active {
             background-color: whitesmoke;
             color: black;
@@ -77,6 +81,33 @@
     </main>
 
     <script>
+
+        function createEntry(capture, text) {
+            const art = document.createElement('article')
+            art.innerText = text
+            const btn = document.createElement('button')
+            btn.innerHTML = '&times;'
+            btn.onclick = (e) => {
+                e.stopPropagation()
+                fetch('/captures/' + capture, { method: 'delete' })
+                    .then(() => {
+                        if (art.classList.contains('active')) {
+                            document.querySelector('video').removeAttribute('src')
+                        }
+                        art.remove()
+                    })
+                    .catch(e => alert(e))
+            }
+            art.appendChild(btn)
+            art.onclick = () => {
+                document.querySelectorAll('article').forEach(a => a.classList.remove('active'))
+                art.classList.add('active')
+                const video = document.querySelector('video')
+                video.src = '/captures/' + capture
+                video.onload = () => video.scrollIntoView({ behavior: 'smooth' })
+            }
+            return art
+        }
         fetch('/captures.json?nocache=' + Date.now()).then(res => {
             if (res.ok) {
                 res.json().then(data => {
@@ -84,48 +115,37 @@
                     main.innerHTML = '<video controls autoplay></video>'
                     let lastSection = undefined
                     data.forEach(capture => {
-                        const ts = new Date(parseInt(capture.replace(/\.mp4$/, '')) * 1000)
-                        const date = ts.toLocaleString(undefined, {
-                            year: '2-digit',
-                            month: '2-digit',
-                            day: '2-digit',
-                        })
-                        const time = ts.toLocaleString(undefined, {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        })
-                        if (!lastSection || lastSection.querySelector('header').innerText !== date) {
-                            const section = document.createElement('section')
-                            const header = document.createElement('header')
-                            header.innerText = date
-                            section.appendChild(header)
-                            main.appendChild(section)
-                            lastSection = section
+                        if (capture.includes('-')) {
+                            const text = new Date(capture.replace(/\.mp4$/, '')).toLocaleString(undefined, {
+                                year: '2-digit',
+                                month: '2-digit',
+                                day: '2-digit',
+                            })
+                            const entry = createEntry(capture, text)
+                            entry.classList.add('big')
+                            main.appendChild(entry)
+                        } else {
+                            const ts = new Date(parseInt(capture.replace(/\.mp4$/, '')) * 1000)
+                            const date = ts.toLocaleString(undefined, {
+                                year: '2-digit',
+                                month: '2-digit',
+                                day: '2-digit',
+                            })
+                            const time = ts.toLocaleString(undefined, {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            })
+                            if (!lastSection || lastSection.querySelector('header').innerText !== date) {
+                                const section = document.createElement('section')
+                                const header = document.createElement('header')
+                                header.innerText = date
+                                section.appendChild(header)
+                                main.appendChild(section)
+                                lastSection = section
+                            }
+                            const entry = createEntry(capture, time)
+                            lastSection.appendChild(entry)
                         }
-                        const art = document.createElement('article')
-                        art.innerText = time
-                        const btn = document.createElement('button')
-                        btn.innerHTML = '&times;'
-                        btn.onclick = (e) => {
-                            e.stopPropagation()
-                            fetch('/captures/' + capture, { method: 'delete' })
-                                .then(() => {
-                                    if (art.classList.contains('active')) {
-                                        document.querySelector('video').removeAttribute('src')
-                                    }
-                                    art.remove()
-                                })
-                                .catch(e => alert(e))
-                        }
-                        art.appendChild(btn)
-                        art.onclick = () => {
-                            document.querySelectorAll('article').forEach(a => a.classList.remove('active'))
-                            art.classList.add('active')
-                            const video = document.querySelector('video')
-                            video.src = '/captures/' + capture
-                            video.onload = () => video.scrollIntoView({ behavior: 'smooth' })
-                        }
-                        lastSection.appendChild(art)
                     })
                 })
             } else {

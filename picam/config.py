@@ -10,10 +10,13 @@ class camera:
 
 
 class captures:
+    directory = '/data/'
     max_disk_usage = 95  # in percent, old videos will be deleted when exceeded
 
     resolution = (1920, 1080)
     fps = 16
+
+    summarize_day = True  # make a summary video out of all yesterday movements instead of keeping the individual files
 
     class motion:
         timeframe = 10  # also keep 10 seconds of a motion shot video before and after the motion has been registered
@@ -40,7 +43,15 @@ class webserver:
         password = ''
 
 
-### config validation:
+class telegram_doorbell:
+    enable = False
+    bot_id = '123456789:XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
+    user_id = 87654321
+
+
+# config validation:
+captures.directory = os.path.abspath(captures.directory)
+
 assert camera.overlay.font_size in range(6, 160+1)
 assert captures.fps in range(1, 40+1)
 assert (not webserver.auth.username and not webserver.auth.password) or (webserver.auth.username and webserver.auth.password)
