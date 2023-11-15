@@ -68,12 +68,20 @@ class DayNightMode:
             self.cam.exposure_mode = 'auto'
             self.cam.shutter_speed = 0
             self.cam.iso = 0
+            self.cam.brightness = 50
+            self.cam.saturation = 50
+            self.cam.contrast = 50
+            self.cam.exposure_compensation = 0
             self.curr_mode = 'day'
             self.next_mode = None
         elif self.next_mode == 'night':
             self.cam.exposure_mode = 'auto'
-            self.cam.shutter_speed = 6_000_000
-            self.cam.iso = 800
+            self.cam.shutter_speed = 30_000_000  # max 6_000_000?
+            self.cam.iso = 1600  # max 800?
+            self.cam.brightness = 75
+            # self.cam.saturation = 60
+            self.cam.contrast = 75
+            self.cam.exposure_compensation = 25
             if time.time() - self.night_mode_startts > 30:
                 self.cam.exposure_mode = 'off'
                 self.curr_mode = 'night'
