@@ -245,6 +245,6 @@ def start_webserver(cam: Cam):
         allow_reuse_address = True
         daemon_threads = True
 
-    server = StreamingServer(('', config.webserver.port), HTTPRequestHandler)
+    server = StreamingServer(config.webserver.bind, HTTPRequestHandler)
 
     threading.Thread(target=server.serve_forever).start()

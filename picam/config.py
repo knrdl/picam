@@ -32,7 +32,7 @@ class captures:
 
 
 class webserver:
-    port = 8000
+    bind = ('', 8000)  # listen on port 8000 on all interfaces per default, change to ('127.0.0.1', 8000) if used in combination with nginx
 
     class livestream:
         max_viewers = 4

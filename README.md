@@ -19,6 +19,11 @@ sudo apt install --no-install-recommends python3-picamera python3-astral python3
 python picam
 ```
 
+/etc/rc.local:
+```shell
+sudo -u pi python /home/pi/picam &
+```
+
 ## Advanced setup
 
 Add a nginx webserver for better performance (than the built-in webserver):
