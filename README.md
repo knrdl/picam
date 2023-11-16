@@ -41,14 +41,21 @@ server {
 
 	server_name _;
 
-	root /home/pi/picam/www/;
+	auth_basic "Login required";
+	auth_basic_user_file /etc/nginx/htpasswd;
+
+	location @backend {
+		proxy_pass http://localhost:8000;
+	}
 
 	location / {
-		proxy_pass http://localhost:8000/;
+		root /home/pi/picam/www/;
+		rewrite ^/$ /live  break;
+		try_files $uri $uri.html @backend;
 	}
 
 	location /captures/ {
-		rewrite /captures/(.*) /$1  break;
+		rewrite /captures/(.*) /$1 break;
 		root /data;
 	}
 }

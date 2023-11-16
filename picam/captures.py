@@ -43,7 +43,9 @@ def start_captures_processing():
                     f.write('file after.h264\n')
                 subprocess.check_output([
                     'nice', '-n', '19',
-                    'ffmpeg', '-r', str(config.captures.fps), '-f', 'concat', '-safe', '0', '-i', 'list.txt', '-c', 'copy', '-hide_banner', '-loglevel', 'error', '-y', 'concat.mp4'
+                    'ffmpeg', '-r', str(config.captures.fps), '-f', 'concat', '-safe', '0', '-i', 'list.txt', 
+                    '-c', 'copy', '-hide_banner', '-loglevel', 'error', '-y', '-movflags', '+faststart+frag_keyframe+separate_moof+omit_tfhd_offset+empty_moov', 
+                    'concat.mp4'
                 ], cwd=tempdir)
                 timestamp = int(tempdir.split('-')[-1])
                 os.replace(os.path.join(tempdir, 'concat.mp4'), os.path.join(config.captures.directory, f'{timestamp}.mp4'))
@@ -66,7 +68,9 @@ def start_captures_processing():
                             f.write(f'file ../{capture}\n')
                     subprocess.check_output([
                         'nice', '-n', '19',
-                        'ffmpeg', '-f', 'concat', '-safe', '0', '-i', 'list.txt', '-c', 'copy', '-hide_banner', '-loglevel', 'error', '-y', 'concat.mp4'
+                        'ffmpeg', '-f', 'concat', '-safe', '0', '-i', 'list.txt', 
+                        '-c', 'copy', '-hide_banner', '-loglevel', 'error', '-y',
+                        'concat.mp4'
                     ], cwd=tempdir)
                     os.replace(os.path.join(tempdir, 'concat.mp4'), os.path.join(config.captures.directory, f'{start_date.isoformat()}.mp4'))
                     shutil.rmtree(tempdir)
