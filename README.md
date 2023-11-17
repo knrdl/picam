@@ -54,6 +54,12 @@ server {
 		try_files $uri $uri.html @backend;
 	}
 
+	# no auth for metrics
+	location = /metrics.json {
+		auth_basic off;
+		proxy_pass http://localhost:8000;
+	}
+
 	location /captures/ {
 		rewrite /captures/(.*) /$1 break;
 		root /data;
