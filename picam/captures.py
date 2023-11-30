@@ -31,7 +31,7 @@ def start_captures_processing():
             while system.disk_usage_percent() > config.captures.max_disk_usage:
                 captures = get_motion_captures()
                 if captures:
-                    os.remove(captures[0])
+                    os.remove(os.path.join(config.captures.directory, captures[0]))
                 else:
                     break
 
