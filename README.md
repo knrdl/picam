@@ -61,8 +61,14 @@ server {
 	}
 
 	location /captures/ {
-		rewrite /captures/(.*) /$1 break;
-		root /data;
+		if ($request_method = DELETE ) {
+			proxy_pass http://localhost:8000;
+		}
+
+		if ($request_method = GET ) {
+			rewrite /captures/(.*) /$1 break;
+			root /data;
+		}
 	}
 }
 ```
