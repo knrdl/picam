@@ -17,6 +17,7 @@ def send_photos(cam):
                           data=dict(chat_id=config.telegram_doorbell.user_id, caption='🔔 🔔 🔔'),
                           files=dict(photo=frame)
                           )
+            time.sleep(1)
 
     if last_send + 5 <= time.time():
         last_send = time.time()
