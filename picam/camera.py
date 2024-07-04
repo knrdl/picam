@@ -116,7 +116,7 @@ class Cam(picamera.PiCamera):
         with MotionDetector(self, size=(640, 480)) as motion:
             self.start_recording('/dev/null', format='h264', resize=motion.size, motion_output=motion, splitter_port=2)
 
-        self.diskstream = picamera.PiCameraCircularIO(self, seconds=config.captures.motion.timeframe)  # keep n secs before motion
+        self.diskstream = picamera.PiCameraCircularIO(self, seconds=config.captures.motion.timeframe, splitter_port=3)  # keep n secs before motion
         self.start_recording(self.diskstream, format='h264', resize=config.captures.resolution, splitter_port=3)
 
         return self
