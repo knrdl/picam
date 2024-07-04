@@ -90,11 +90,15 @@
             btn.onclick = (e) => {
                 e.stopPropagation()
                 fetch('/captures/' + capture, { method: 'delete' })
-                    .then(() => {
-                        if (art.classList.contains('active')) {
-                            document.querySelector('video').removeAttribute('src')
+                    .then(res => {
+                        if (res.ok) {
+                            if (art.classList.contains('active')) {
+                                document.querySelector('video').removeAttribute('src')
+                            }
+                            art.remove()
+                        } else {
+                            res.text().then(errMsg => alert(errMsg))
                         }
-                        art.remove()
                     })
                     .catch(e => alert(e))
             }
@@ -113,39 +117,44 @@
                 res.json().then(data => {
                     const main = document.querySelector('main')
                     main.innerHTML = '<video controls autoplay></video>'
+
+                    const files = data.filter(e => e.type === 'file' && e.name.endsWith('.mp4')).map(e => e.name)
+                    const dayEntries = files.filter(e => e.includes('-')).toSorted((a, b) => a.localeCompare(b))
+                    const timeEntries = files.filter(e => !e.includes('-')).toSorted((a, b) => a.localeCompare(b))
+
+                    dayEntries.forEach(capture => {
+                        const text = new Date(capture.replace(/\.mp4$/, '')).toLocaleString(undefined, {
+                            year: '2-digit',
+                            month: '2-digit',
+                            day: '2-digit',
+                        })
+                        const entry = createEntry(capture, text)
+                        entry.classList.add('big')
+                        main.appendChild(entry)
+                    })
+
                     let lastSection = undefined
-                    data.forEach(capture => {
-                        if (capture.includes('-')) {
-                            const text = new Date(capture.replace(/\.mp4$/, '')).toLocaleString(undefined, {
-                                year: '2-digit',
-                                month: '2-digit',
-                                day: '2-digit',
-                            })
-                            const entry = createEntry(capture, text)
-                            entry.classList.add('big')
-                            main.appendChild(entry)
-                        } else {
-                            const ts = new Date(parseInt(capture.replace(/\.mp4$/, '')) * 1000)
-                            const date = ts.toLocaleString(undefined, {
-                                year: '2-digit',
-                                month: '2-digit',
-                                day: '2-digit',
-                            })
-                            const time = ts.toLocaleString(undefined, {
-                                hour: '2-digit',
-                                minute: '2-digit'
-                            })
-                            if (!lastSection || lastSection.querySelector('header').innerText !== date) {
-                                const section = document.createElement('section')
-                                const header = document.createElement('header')
-                                header.innerText = date
-                                section.appendChild(header)
-                                main.appendChild(section)
-                                lastSection = section
-                            }
-                            const entry = createEntry(capture, time)
-                            lastSection.appendChild(entry)
+                    timeEntries.forEach(capture => {
+                        const ts = new Date(parseInt(capture.replace(/\.mp4$/, '')) * 1000)
+                        const date = ts.toLocaleString(undefined, {
+                            year: '2-digit',
+                            month: '2-digit',
+                            day: '2-digit',
+                        })
+                        const time = ts.toLocaleString(undefined, {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })
+                        if (!lastSection || lastSection.querySelector('header').innerText !== date) {
+                            const section = document.createElement('section')
+                            const header = document.createElement('header')
+                            header.innerText = date
+                            section.appendChild(header)
+                            main.appendChild(section)
+                            lastSection = section
                         }
+                        const entry = createEntry(capture, time)
+                        lastSection.appendChild(entry)
                     })
                 })
             } else {

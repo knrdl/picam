@@ -3,16 +3,18 @@ import time
 import requests
 import config
 
+import camera
+
 last_send = 0
 
 
-def send_photos(cam):
+def send_photos():
     global last_send
     def do():
         for _ in range(3):
-            with cam.livestream.condition:
-                cam.livestream.condition.wait()
-                frame = cam.livestream.frame
+            with camera.livestream.condition:
+                camera.livestream.condition.wait()
+                frame = camera.livestream.frame
             requests.post('https://api.telegram.org/bot%s/sendPhoto' % config.telegram_doorbell.bot_id,
                           data=dict(chat_id=config.telegram_doorbell.user_id, caption='🔔 🔔 🔔'),
                           files=dict(photo=frame)

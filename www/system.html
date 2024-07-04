@@ -36,6 +36,11 @@
                     <td><meter id="sysTempM" min="0" max="100" low="30" high="85" optimum="50" value="0"></meter></td>
                 </tr>
                 <tr>
+                    <th>onewire Temperature</th>
+                    <td id="w1TempV"></td>
+                    <td><meter id="w1TempM" min="-20" max="50" low="5" high="25" optimum="20"></meter></td>
+                </tr>
+                <tr>
                     <th>Disk Usage</th>
                     <td id="diskUsageV"></td>
                     <td><meter id="diskUsageM" min="0" max="100" low="5" high="80" value="0"></meter></td>
@@ -88,6 +93,8 @@
                         id('diskUsageV').innerText = data.disk_usage + '%'
                         id('sysTempM').value = data.system_temperature
                         id('sysTempV').innerText = data.system_temperature + '°C'
+                        id('w1TempM').value = data.w1_temperature
+                        id('w1TempV').innerText = data.w1_temperature + '°C'
                         id('load1M').value = data.load_percent[0]
                         id('load1V').innerText = data.load_percent[0] + '%'
                         id('load5M').value = data.load_percent[1]

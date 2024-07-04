@@ -1,9 +1,12 @@
-from camera import Cam
-from captures import start_captures_processing
-from webserver import start_webserver
+import camera
+import captures
+import webserver
 
-start_captures_processing()
+captures.start_processing()
 
-with Cam() as cam:
-    start_webserver(cam)
-    cam.run()
+camera.start_daynight_switch()
+camera.start_overlay_updater()
+camera.start_motion_capture()
+
+webserver.run_webserver()
+
